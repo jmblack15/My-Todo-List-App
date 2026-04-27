@@ -5,16 +5,23 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, useRootNavigationState } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import "react-native-reanimated";
 
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { theme } = useThemeStore();
+  const navigationState = useRootNavigationState();
+
+  useEffect(() => {
+    if (navigationState?.key) {
+      SplashScreen.hideAsync();
+    }
+  }, [navigationState?.key]);
 
   const customTheme = {
     ...(theme === "dark" ? DarkTheme : DefaultTheme),
@@ -31,9 +38,8 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={customTheme}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
-      <Stack>
-        {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} /> */}
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </ThemeProvider>
   );
