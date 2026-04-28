@@ -1,8 +1,8 @@
 import { create } from 'zustand'
-import { MMKV } from 'react-native-mmkv'
+import { createMMKV } from 'react-native-mmkv'
 import type { AppTheme, Language } from '@/types'
 
-const storage = new MMKV({ id: 'ui-preferences' })
+const storage = createMMKV({ id: 'ui-preferences' })
 
 type UIStore = {
   theme: AppTheme

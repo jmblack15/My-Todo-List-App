@@ -16,9 +16,9 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useHabitStore } from '@/store/useHabitStore'
-import { useScheduleStore } from '@/store/useScheduleStore'
-import { useTaskStore } from '@/store/useTaskStore'
+import { useHabitStore } from '@/stores/useHabitStore'
+import { useScheduleStore } from '@/stores/useScheduleStore'
+import { useTaskStore } from '@/stores/useTaskStore'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import type { Habit, ScheduleBlock, Task } from '@/types'
 
@@ -80,6 +80,7 @@ function SkeletonRect({
       -1,
       true,
     )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
@@ -234,7 +235,7 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: () => void }) {
 
   const handleLongPress = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    router.push(`/task/${task.id}`)
+    router.push(`/task/${task.id}` as never)
   }
 
   return (
@@ -332,13 +333,13 @@ function FAB() {
   const handleNewTask = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     close()
-    router.push('/task/new')
+    router.push('/task/new' as never)
   }
 
   const handleNewHabit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     close()
-    router.push('/habit/new')
+    router.push('/habit/new' as never)
   }
 
   return (
@@ -413,11 +414,12 @@ export default function TodayScreen() {
   const { todayHabits, loadTodayHabits, toggleToday } = useHabitStore()
   const { todayBlocks, loadTodayBlocks } = useScheduleStore()
 
+  const today = format(new Date(), 'yyyy-MM-dd')
+
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   const loadData = useCallback(async () => {
-    const today = format(new Date(), 'yyyy-MM-dd')
     const dayOfWeek = getDay(new Date())
     await Promise.all([
       loadTodayTasks(today),
@@ -506,7 +508,7 @@ export default function TodayScreen() {
                     No tienes hábitos activos
                   </Text>
                   <Pressable
-                    onPress={() => router.push('/habit/new')}
+                    onPress={() => router.push('/habit/new' as never)}
                     className="rounded-full px-4 py-2"
                     style={{ backgroundColor: colors.primary }}
                   >
@@ -538,7 +540,7 @@ export default function TodayScreen() {
                     <HabitItem
                       key={habit.id}
                       habit={habit}
-                      onToggle={() => toggleToday(habit.id)}
+                      onToggle={() => toggleToday(habit.id, today)}
                     />
                   ))}
                 </View>
@@ -554,7 +556,7 @@ export default function TodayScreen() {
                     No tienes tareas para hoy
                   </Text>
                   <Pressable
-                    onPress={() => router.push('/task/new')}
+                    onPress={() => router.push('/task/new' as never)}
                     className="rounded-full px-4 py-2"
                     style={{ backgroundColor: colors.primary }}
                   >

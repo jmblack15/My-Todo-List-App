@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/theme";
-import { useThemeStore } from "@/store/useThemeStore";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { useUIStore } from "@/stores/useUIStore";
 import {
   DarkTheme,
   DefaultTheme,
@@ -14,8 +14,14 @@ import "react-native-reanimated";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { theme } = useThemeStore();
+  const { loadTheme, loadLanguage } = useUIStore();
+  const { colors, isDark } = useAppTheme();
   const navigationState = useRootNavigationState();
+
+  useEffect(() => {
+    loadTheme();
+    loadLanguage();
+  }, []);
 
   useEffect(() => {
     if (navigationState?.key) {
@@ -24,20 +30,20 @@ export default function RootLayout() {
   }, [navigationState?.key]);
 
   const customTheme = {
-    ...(theme === "dark" ? DarkTheme : DefaultTheme),
+    ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
-      ...(theme === "dark" ? DarkTheme.colors : DefaultTheme.colors),
-      primary: Colors[theme].tint,
-      background: Colors[theme].background,
-      card: Colors[theme].card,
-      text: Colors[theme].text,
-      border: Colors[theme].border,
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
     },
   };
 
   return (
     <ThemeProvider value={customTheme}>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
       </Stack>
