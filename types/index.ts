@@ -64,11 +64,21 @@ export type Language = 'es' | 'en'
 export type AppColors = {
   background: string
   card: string
+  bgSubtle: string
   text: string
   textSecondary: string
+  textTertiary: string
+  textQuaternary: string
   border: string
+  borderStrong: string
   primary: string
+  indigoSoft: string
   success: string
   warning: string
   danger: string
+  accentEmerald: string
+  accentAmber: string
+  accentRose: string
+  accentSky: string
+  accentViolet: string
 }
