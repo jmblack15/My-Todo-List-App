@@ -14,3 +14,9 @@ export function isBlockActive(block: ScheduleBlock): boolean {
 export function isBlockPast(block: ScheduleBlock): boolean {
   return block.end_time <= currentTime();
 }
+
+export function blockDurationMinutes(block: ScheduleBlock): number {
+  const [sh, sm] = block.start_time.split(":").map(Number);
+  const [eh, em] = block.end_time.split(":").map(Number);
+  return eh * 60 + em - (sh * 60 + sm);
+}
