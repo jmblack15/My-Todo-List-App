@@ -1,13 +1,11 @@
-import { Ionicons } from '@expo/vector-icons'
-import { Tabs } from 'expo-router'
-import { useAppTheme } from '@/hooks/useAppTheme'
-
-type IoniconName = React.ComponentProps<typeof Ionicons>['name']
+import { Icons } from "@/constants/icons";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
-  const { colors, isDark } = useAppTheme()
+  const { colors, isDark } = useAppTheme();
 
-  const tabBarBg = isDark ? 'rgba(10,10,11,0.92)' : 'rgba(250,250,250,0.92)'
+  const tabBarBg = isDark ? "rgba(10,10,11,0.92)" : "rgba(250,250,250,0.92)";
 
   return (
     <Tabs
@@ -16,7 +14,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          position: 'absolute',
+          position: "absolute",
           backgroundColor: tabBarBg,
           borderTopWidth: 0.5,
           borderTopColor: colors.border,
@@ -24,32 +22,28 @@ export default function TabsLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '600',
+          fontWeight: "600",
         },
       }}
     >
       <Tabs.Screen
-        name="today"
+        name="index"
         options={{
-          title: 'Hoy',
+          title: "Hoy",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={(focused ? 'home' : 'home-outline') as IoniconName}
-              size={size}
-              color={color}
-            />
+            <Icons.Home size={size} color={color} stroke={focused ? 2 : 1.6} />
           ),
         }}
       />
       <Tabs.Screen
         name="tasks"
         options={{
-          title: 'Tareas',
+          title: "Tareas",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={(focused ? 'checkbox' : 'checkbox-outline') as IoniconName}
+            <Icons.ListTodo
               size={size}
               color={color}
+              stroke={focused ? 2 : 1.6}
             />
           ),
         }}
@@ -57,12 +51,12 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="habits"
         options={{
-          title: 'Hábitos',
+          title: "Hábitos",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={(focused ? 'leaf' : 'leaf-outline') as IoniconName}
+            <Icons.Repeat
               size={size}
               color={color}
+              stroke={focused ? 2 : 1.6}
             />
           ),
         }}
@@ -70,16 +64,16 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="schedule"
         options={{
-          title: 'Horario',
+          title: "Horario",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={(focused ? 'calendar' : 'calendar-outline') as IoniconName}
+            <Icons.CalGrid
               size={size}
               color={color}
+              stroke={focused ? 2 : 1.6}
             />
           ),
         }}
       />
     </Tabs>
-  )
+  );
 }
