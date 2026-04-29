@@ -3,7 +3,8 @@ import { router } from 'expo-router'
 import { format, getDay, getHours } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useCallback, useEffect, useState } from 'react'
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
   Easing,
   interpolate,
@@ -72,11 +73,11 @@ function SkeletonRect({
   width?: number | string
 }) {
   const { colors } = useAppTheme()
-  const opacity = useSharedValue(0.3)
+  const opacity = useSharedValue(0.4)
 
   useEffect(() => {
     opacity.value = withRepeat(
-      withTiming(0.8, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
       -1,
       true,
     )
@@ -93,7 +94,7 @@ function SkeletonRect({
           height,
           width: width as number,
           borderRadius: 8,
-          backgroundColor: colors.border,
+          backgroundColor: colors.bgSubtle,
         },
       ]}
     />
@@ -102,10 +103,10 @@ function SkeletonRect({
 
 function SkeletonSection({ itemCount }: { itemCount: number }) {
   return (
-    <View className="mb-6">
+    <View style={{ marginBottom: 24 }}>
       <SkeletonRect height={11} width="32%" />
       {Array.from({ length: itemCount }).map((_, i) => (
-        <View key={i} className="mt-3">
+        <View key={i} style={{ marginTop: 12 }}>
           <SkeletonRect height={56} />
         </View>
       ))}
@@ -115,15 +116,19 @@ function SkeletonSection({ itemCount }: { itemCount: number }) {
 
 // ─── Section header ───────────────────────────────────────────────────────────
 
-function SectionHeader({ label }: { label: string }) {
+function SectionHeader({ label, count }: { label: string; count?: string }) {
   const { colors } = useAppTheme()
   return (
-    <Text
-      className="text-[11px] font-semibold uppercase tracking-widest mb-3"
-      style={{ color: colors.textSecondary }}
-    >
-      {label}
-    </Text>
+    <View style={styles.sectionHeaderRow}>
+      <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>
+        {label}
+      </Text>
+      {count != null && (
+        <Text style={[styles.sectionCount, { color: colors.textTertiary }]}>
+          {count}
+        </Text>
+      )}
+    </View>
   )
 }
 
@@ -136,25 +141,29 @@ function ScheduleItem({ block }: { block: ScheduleBlock }) {
 
   return (
     <View
-      className="flex-row items-center rounded-xl px-4 py-3 mb-2"
-      style={{
-        opacity: past && !active ? 0.5 : 1,
-        backgroundColor: active ? block.color + '18' : colors.card,
-        borderLeftWidth: active ? 3 : 0,
-        borderLeftColor: block.color,
-      }}
+      style={[
+        styles.scheduleItem,
+        {
+          opacity: past && !active ? 0.45 : 1,
+          backgroundColor: active ? block.color + '18' : colors.card,
+          borderLeftWidth: active ? 3 : 0,
+          borderLeftColor: active ? block.color : 'transparent',
+          borderWidth: active ? 0 : StyleSheet.hairlineWidth,
+          borderColor: colors.border,
+        },
+      ]}
     >
-      <View className="flex-1">
-        <Text className="text-base font-medium" style={{ color: colors.text }}>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.scheduleTitle, { color: colors.text }]}>
           {block.title}
         </Text>
-        <Text className="text-[13px] mt-0.5" style={{ color: colors.textSecondary }}>
+        <Text style={[styles.scheduleTime, { color: colors.textSecondary }]}>
           {block.start_time} – {block.end_time}
         </Text>
       </View>
       {active && (
-        <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: block.color }}>
-          <Text className="text-xs font-semibold text-white">Ahora</Text>
+        <View style={[styles.nowBadge, { backgroundColor: block.color }]}>
+          <Text style={styles.nowBadgeText}>Ahora</Text>
         </View>
       )}
     </View>
@@ -163,11 +172,11 @@ function ScheduleItem({ block }: { block: ScheduleBlock }) {
 
 // ─── Habit item ───────────────────────────────────────────────────────────────
 
-function HabitItem({ habit, onToggle }: { habit: Habit; onToggle: () => void }) {
+function HabitItem({ habit, onToggle, isLast }: { habit: Habit; onToggle: () => void; isLast: boolean }) {
   const { colors } = useAppTheme()
   const scale = useSharedValue(1)
 
-  const checkboxAnimStyle = useAnimatedStyle(() => ({
+  const checkboxStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
 
@@ -183,12 +192,13 @@ function HabitItem({ habit, onToggle }: { habit: Habit; onToggle: () => void }) 
   return (
     <Pressable
       onPress={handlePress}
-      className="flex-row items-center py-3 border-b"
-      style={{ borderBottomColor: colors.border }}
+      style={[
+        styles.listItem,
+        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+      ]}
     >
-      {/* Animated checkbox */}
-      <View className="mr-3">
-        <Animated.View style={checkboxAnimStyle}>
+      <View style={{ marginRight: 12 }}>
+        <Animated.View style={checkboxStyle}>
           <View
             style={{
               width: 24,
@@ -196,26 +206,32 @@ function HabitItem({ habit, onToggle }: { habit: Habit; onToggle: () => void }) 
               borderRadius: 12,
               alignItems: 'center',
               justifyContent: 'center',
-              borderWidth: habit.completed_today ? 0 : 2,
-              borderColor: habit.completed_today ? 'transparent' : colors.border,
+              borderWidth: habit.completed_today ? 0 : 1.5,
+              borderColor: habit.completed_today ? 'transparent' : colors.borderStrong,
               backgroundColor: habit.completed_today ? habit.color : 'transparent',
             }}
           >
             {habit.completed_today && (
-              <Ionicons name="checkmark" size={14} color="white" />
+              <Ionicons name="checkmark" size={13} color="white" />
             )}
           </View>
         </Animated.View>
       </View>
 
-      <Text className="text-xl mr-2">{habit.icon}</Text>
+      <Text style={styles.habitIcon}>{habit.icon}</Text>
 
-      <Text className="flex-1 text-base" style={{ color: colors.text }}>
+      <Text
+        style={[
+          styles.listItemTitle,
+          { color: habit.completed_today ? colors.textTertiary : colors.text },
+          habit.completed_today && styles.strikethrough,
+        ]}
+      >
         {habit.title}
       </Text>
 
       {habit.streak >= 3 && (
-        <Text className="text-[13px]" style={{ color: colors.textSecondary }}>
+        <Text style={[styles.streakText, { color: colors.textSecondary }]}>
           🔥 {habit.streak}
         </Text>
       )}
@@ -225,7 +241,7 @@ function HabitItem({ habit, onToggle }: { habit: Habit; onToggle: () => void }) 
 
 // ─── Task item ────────────────────────────────────────────────────────────────
 
-function TaskItem({ task, onToggle }: { task: Task; onToggle: () => void }) {
+function TaskItem({ task, onToggle, isLast }: { task: Task; onToggle: () => void; isLast: boolean }) {
   const { colors } = useAppTheme()
 
   const handlePress = () => {
@@ -238,38 +254,45 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: () => void }) {
     router.push(`/task/${task.id}` as never)
   }
 
+  const priorityColor = task.priority === 'high' ? colors.danger : colors.warning
+
   return (
     <Pressable
       onPress={handlePress}
       onLongPress={handleLongPress}
-      className="flex-row items-center py-3 border-b"
-      style={{ borderBottomColor: colors.border }}
+      style={[
+        styles.listItem,
+        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+      ]}
     >
       <View
-        className="mr-3"
         style={{
           width: 24,
           height: 24,
           borderRadius: 12,
           alignItems: 'center',
           justifyContent: 'center',
-          borderWidth: task.done ? 0 : 2,
-          borderColor: task.done ? 'transparent' : colors.border,
+          marginRight: 12,
+          borderWidth: task.done ? 0 : 1.5,
+          borderColor: task.done ? 'transparent' : colors.borderStrong,
           backgroundColor: task.done ? colors.primary : 'transparent',
         }}
       >
-        {task.done && <Ionicons name="checkmark" size={14} color="white" />}
+        {task.done && <Ionicons name="checkmark" size={13} color="white" />}
       </View>
 
-      <View className="flex-1 gap-0.5">
+      <View style={{ flex: 1, gap: 2 }}>
         <Text
-          className={task.done ? 'text-base line-through' : 'text-base'}
-          style={{ color: task.done ? colors.textSecondary : colors.text }}
+          style={[
+            styles.listItemTitle,
+            { color: task.done ? colors.textTertiary : colors.text },
+            task.done && styles.strikethrough,
+          ]}
         >
           {task.title}
         </Text>
         {task.due_time != null && (
-          <Text className="text-[13px]" style={{ color: colors.textSecondary }}>
+          <Text style={[styles.taskTime, { color: colors.textTertiary }]}>
             {task.due_time}
           </Text>
         )}
@@ -277,18 +300,12 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: () => void }) {
 
       {task.priority !== 'low' && (
         <View
-          className="rounded px-1.5 py-0.5 ml-2"
-          style={{
-            backgroundColor:
-              task.priority === 'high' ? colors.danger + '28' : colors.warning + '28',
-          }}
+          style={[
+            styles.priorityBadge,
+            { backgroundColor: priorityColor + '20' },
+          ]}
         >
-          <Text
-            className="text-xs font-medium"
-            style={{
-              color: task.priority === 'high' ? colors.danger : colors.warning,
-            }}
-          >
+          <Text style={[styles.priorityBadgeText, { color: priorityColor }]}>
             {task.priority === 'high' ? 'Alta' : 'Media'}
           </Text>
         </View>
@@ -299,7 +316,7 @@ function TaskItem({ task, onToggle }: { task: Task; onToggle: () => void }) {
 
 // ─── FAB ──────────────────────────────────────────────────────────────────────
 
-function FAB() {
+function FAB({ bottomInset }: { bottomInset: number }) {
   const { colors } = useAppTheme()
   const [open, setOpen] = useState(false)
   const progress = useSharedValue(0)
@@ -344,58 +361,40 @@ function FAB() {
 
   return (
     <>
-      {open && (
-        <Pressable className="absolute inset-0" onPress={close} />
-      )}
+      {open && <Pressable style={StyleSheet.absoluteFillObject} onPress={close} />}
 
-      <View className="absolute bottom-6 right-6 items-end gap-3">
-        {/* Option: Nuevo hábito */}
+      <View style={[styles.fabContainer, { bottom: bottomInset + 16 }]}>
         <Animated.View style={opt2Style} pointerEvents={open ? 'auto' : 'none'}>
-          <View className="flex-row items-center gap-2">
-            <View
-              className="rounded-xl px-3 py-1.5 shadow"
-              style={{ backgroundColor: colors.card }}
-            >
-              <Text className="text-sm font-medium" style={{ color: colors.text }}>
-                Nuevo hábito
-              </Text>
+          <View style={styles.fabOption}>
+            <View style={[styles.fabOptionLabel, { backgroundColor: colors.card, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }]}>
+              <Text style={[styles.fabOptionText, { color: colors.text }]}>Nuevo hábito</Text>
             </View>
             <Pressable
               onPress={handleNewHabit}
-              className="w-12 h-12 rounded-full items-center justify-center shadow"
-              style={{ backgroundColor: colors.card }}
+              style={[styles.fabMini, { backgroundColor: colors.card, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }]}
             >
               <Ionicons name="leaf-outline" size={20} color={colors.primary} />
             </Pressable>
           </View>
         </Animated.View>
 
-        {/* Option: Nueva tarea */}
         <Animated.View style={opt1Style} pointerEvents={open ? 'auto' : 'none'}>
-          <View className="flex-row items-center gap-2">
-            <View
-              className="rounded-xl px-3 py-1.5 shadow"
-              style={{ backgroundColor: colors.card }}
-            >
-              <Text className="text-sm font-medium" style={{ color: colors.text }}>
-                Nueva tarea
-              </Text>
+          <View style={styles.fabOption}>
+            <View style={[styles.fabOptionLabel, { backgroundColor: colors.card, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }]}>
+              <Text style={[styles.fabOptionText, { color: colors.text }]}>Nueva tarea</Text>
             </View>
             <Pressable
               onPress={handleNewTask}
-              className="w-12 h-12 rounded-full items-center justify-center shadow"
-              style={{ backgroundColor: colors.card }}
+              style={[styles.fabMini, { backgroundColor: colors.card, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }]}
             >
               <Ionicons name="checkbox-outline" size={20} color={colors.primary} />
             </Pressable>
           </View>
         </Animated.View>
 
-        {/* Main button */}
         <Pressable
           onPress={toggle}
-          className="w-14 h-14 rounded-full items-center justify-center shadow-lg"
-          style={{ backgroundColor: colors.primary }}
+          style={[styles.fabMain, { backgroundColor: colors.primary }]}
         >
           <Animated.View style={iconStyle}>
             <Ionicons name="add" size={28} color="white" />
@@ -410,6 +409,8 @@ function FAB() {
 
 export default function TodayScreen() {
   const { colors } = useAppTheme()
+  const insets = useSafeAreaInsets()
+
   const { todayTasks, loadTodayTasks, toggleDone } = useTaskStore()
   const { todayHabits, loadTodayHabits, toggleToday } = useHabitStore()
   const { todayBlocks, loadTodayBlocks } = useScheduleStore()
@@ -445,11 +446,19 @@ export default function TodayScreen() {
     a.start_time.localeCompare(b.start_time),
   )
 
+  const doneTasks = sortedTasks.filter((t) => t.done).length
+  const tabBarHeight = 49
+  const scrollBottomPad = insets.bottom + tabBarHeight + 32
+
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingTop: insets.top + 20,
+          paddingHorizontal: 20,
+          paddingBottom: scrollBottomPad,
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -460,19 +469,19 @@ export default function TodayScreen() {
         }
       >
         {/* ── Header ── */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold" style={{ color: colors.text }}>
+        <View style={{ marginBottom: 28 }}>
+          <Text style={[styles.greeting, { color: colors.text }]}>
             {getGreeting()}
           </Text>
-          <Text className="text-[13px] mt-1" style={{ color: colors.textSecondary }}>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>
             {getFormattedDate()}
           </Text>
-          <View
-            className="self-start mt-3 rounded-full px-3 py-1"
-            style={{ backgroundColor: colors.card }}
-          >
-            <Text className="text-[13px] font-medium" style={{ color: colors.textSecondary }}>
-              {sortedTasks.length} tareas · {completedHabits}/{todayHabits.length} hábitos
+          <View style={[styles.statPill, { backgroundColor: colors.bgSubtle }]}>
+            <Text style={[styles.statPillText, { color: colors.textSecondary }]}>
+              {sortedTasks.length > 0
+                ? `${doneTasks}/${sortedTasks.length} tareas`
+                : 'Sin tareas hoy'}
+              {todayHabits.length > 0 && ` · ${completedHabits}/${todayHabits.length} hábitos`}
             </Text>
           </View>
         </View>
@@ -486,60 +495,57 @@ export default function TodayScreen() {
         ) : (
           <>
             {/* ── Horario ── */}
-            <View className="mb-6">
-              <SectionHeader label="Horario" />
-              {sortedBlocks.length === 0 ? (
-                <Text className="text-[13px]" style={{ color: colors.textSecondary }}>
-                  Sin bloques hoy
-                </Text>
-              ) : (
-                sortedBlocks.map((block) => (
+            {sortedBlocks.length > 0 && (
+              <View style={{ marginBottom: 28 }}>
+                <SectionHeader label="Horario" count={String(sortedBlocks.length)} />
+                {sortedBlocks.map((block) => (
                   <ScheduleItem key={block.id} block={block} />
-                ))
-              )}
-            </View>
+                ))}
+              </View>
+            )}
 
             {/* ── Hábitos ── */}
-            <View className="mb-6">
-              <SectionHeader label="Hábitos" />
+            <View style={{ marginBottom: 28 }}>
+              <SectionHeader
+                label="Hábitos"
+                count={todayHabits.length > 0 ? `${completedHabits}/${todayHabits.length}` : undefined}
+              />
               {todayHabits.length === 0 ? (
-                <View className="items-center py-6">
-                  <Text className="text-[13px] mb-3" style={{ color: colors.textSecondary }}>
-                    No tienes hábitos activos
-                  </Text>
-                  <Pressable
-                    onPress={() => router.push('/habit/new' as never)}
-                    className="rounded-full px-4 py-2"
-                    style={{ backgroundColor: colors.primary }}
-                  >
-                    <Text className="text-sm font-semibold text-white">Agregar hábito</Text>
-                  </Pressable>
-                </View>
+                <EmptyState
+                  message="No tienes hábitos activos"
+                  action="Agregar hábito"
+                  onPress={() => router.push('/habit/new' as never)}
+                />
               ) : (
                 <View
-                  className="rounded-xl px-4 pt-4 pb-1"
-                  style={{ backgroundColor: colors.card }}
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                    },
+                  ]}
                 >
                   {/* Progress bar */}
-                  <View
-                    className="h-1 rounded-full mb-1"
-                    style={{ backgroundColor: colors.border }}
-                  >
+                  <View style={[styles.progressTrack, { backgroundColor: colors.bgSubtle }]}>
                     <View
-                      className="h-1 rounded-full"
-                      style={{
-                        width: `${habitProgress * 100}%`,
-                        backgroundColor: colors.primary,
-                      }}
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${habitProgress * 100}%`,
+                          backgroundColor: colors.primary,
+                        },
+                      ]}
                     />
                   </View>
-                  <Text className="text-[13px] mb-3" style={{ color: colors.textSecondary }}>
+                  <Text style={[styles.progressLabel, { color: colors.textTertiary }]}>
                     {completedHabits} de {todayHabits.length} completados
                   </Text>
-                  {todayHabits.map((habit) => (
+                  {todayHabits.map((habit, i) => (
                     <HabitItem
                       key={habit.id}
                       habit={habit}
+                      isLast={i === todayHabits.length - 1}
                       onToggle={() => toggleToday(habit.id, today)}
                     />
                   ))}
@@ -548,30 +554,32 @@ export default function TodayScreen() {
             </View>
 
             {/* ── Tareas ── */}
-            <View className="mb-6">
-              <SectionHeader label="Tareas" />
+            <View style={{ marginBottom: 28 }}>
+              <SectionHeader
+                label="Tareas"
+                count={sortedTasks.length > 0 ? `${doneTasks}/${sortedTasks.length}` : undefined}
+              />
               {sortedTasks.length === 0 ? (
-                <View className="items-center py-6">
-                  <Text className="text-[13px] mb-3" style={{ color: colors.textSecondary }}>
-                    No tienes tareas para hoy
-                  </Text>
-                  <Pressable
-                    onPress={() => router.push('/task/new' as never)}
-                    className="rounded-full px-4 py-2"
-                    style={{ backgroundColor: colors.primary }}
-                  >
-                    <Text className="text-sm font-semibold text-white">Agregar tarea</Text>
-                  </Pressable>
-                </View>
+                <EmptyState
+                  message="No tienes tareas para hoy"
+                  action="Agregar tarea"
+                  onPress={() => router.push('/task/new' as never)}
+                />
               ) : (
                 <View
-                  className="rounded-xl px-4 pt-2"
-                  style={{ backgroundColor: colors.card }}
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                    },
+                  ]}
                 >
-                  {sortedTasks.map((task) => (
+                  {sortedTasks.map((task, i) => (
                     <TaskItem
                       key={task.id}
                       task={task}
+                      isLast={i === sortedTasks.length - 1}
                       onToggle={() => toggleDone(task.id)}
                     />
                   ))}
@@ -582,7 +590,214 @@ export default function TodayScreen() {
         )}
       </ScrollView>
 
-      <FAB />
+      <FAB bottomInset={insets.bottom + tabBarHeight} />
     </View>
   )
 }
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyState({
+  message,
+  action,
+  onPress,
+}: {
+  message: string
+  action: string
+  onPress: () => void
+}) {
+  const { colors } = useAppTheme()
+  return (
+    <View style={[styles.emptyState, { backgroundColor: colors.bgSubtle }]}>
+      <Text style={[styles.emptyText, { color: colors.textTertiary }]}>{message}</Text>
+      <Pressable
+        onPress={onPress}
+        style={[styles.emptyAction, { backgroundColor: colors.indigoSoft }]}
+      >
+        <Text style={[styles.emptyActionText, { color: colors.primary }]}>{action}</Text>
+      </Pressable>
+    </View>
+  )
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  dateText: {
+    fontSize: 13,
+    marginTop: 4,
+  },
+  statPill: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  statPillText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  sectionCount: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  scheduleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  scheduleTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  scheduleTime: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  nowBadge: {
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  nowBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'white',
+  },
+  card: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
+    overflow: 'hidden',
+  },
+  progressTrack: {
+    height: 3,
+    borderRadius: 2,
+    marginBottom: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 3,
+    borderRadius: 2,
+  },
+  progressLabel: {
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 13,
+  },
+  listItemTitle: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  strikethrough: {
+    textDecorationLine: 'line-through',
+  },
+  habitIcon: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  streakText: {
+    fontSize: 12,
+  },
+  taskTime: {
+    fontSize: 12,
+  },
+  priorityBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    marginLeft: 8,
+  },
+  priorityBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  emptyState: {
+    borderRadius: 16,
+    alignItems: 'center',
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 13,
+  },
+  emptyAction: {
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  emptyActionText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  fabContainer: {
+    position: 'absolute',
+    right: 20,
+    alignItems: 'flex-end',
+    gap: 12,
+  },
+  fabOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  fabOptionLabel: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  fabOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  fabMini: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabMain: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+})
