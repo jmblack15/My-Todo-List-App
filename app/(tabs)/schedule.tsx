@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics'
 import { router } from 'expo-router'
-import { format, getDay } from 'date-fns'
+import { getDay } from 'date-fns'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Alert,
@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useScheduleStore } from '@/stores/useScheduleStore'
 import { useAppTheme } from '@/hooks/useAppTheme'
 import type { ScheduleBlock } from '@/types'
+import { isBlockActive, isBlockPast } from '@/utils/scheduleUtils'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -29,19 +30,6 @@ const DAYS: { label: string; value: number }[] = [
   { label: 'S', value: 6 },
   { label: 'D', value: 0 },
 ]
-
-function currentTime(): string {
-  return format(new Date(), 'HH:mm')
-}
-
-function isBlockActive(block: ScheduleBlock): boolean {
-  const t = currentTime()
-  return block.start_time <= t && t < block.end_time
-}
-
-function isBlockPast(block: ScheduleBlock): boolean {
-  return block.end_time <= currentTime()
-}
 
 function formatTimeRange(start: string, end: string): string {
   return `${start} – ${end}`
