@@ -66,7 +66,8 @@ export function FAB({ bottomInset }: { bottomInset: number }) {
       <View style={[styles.container, { bottom: bottomInset + 16 }]}>
         <Animated.View style={opt2Style} pointerEvents={open ? "auto" : "none"}>
           <View style={styles.option}>
-            <View
+            <Pressable
+              onPress={handleNewHabit}
               style={[
                 styles.optionLabel,
                 {
@@ -79,7 +80,7 @@ export function FAB({ bottomInset }: { bottomInset: number }) {
               <Text style={[styles.optionText, { color: colors.text }]}>
                 Nuevo hábito
               </Text>
-            </View>
+            </Pressable>
             <Pressable
               onPress={handleNewHabit}
               style={[
@@ -98,7 +99,8 @@ export function FAB({ bottomInset }: { bottomInset: number }) {
 
         <Animated.View style={opt1Style} pointerEvents={open ? "auto" : "none"}>
           <View style={styles.option}>
-            <View
+            <Pressable
+              onPress={handleNewTask}
               style={[
                 styles.optionLabel,
                 {
@@ -111,7 +113,7 @@ export function FAB({ bottomInset }: { bottomInset: number }) {
               <Text style={[styles.optionText, { color: colors.text }]}>
                 Nueva tarea
               </Text>
-            </View>
+            </Pressable>
             <Pressable
               onPress={handleNewTask}
               style={[

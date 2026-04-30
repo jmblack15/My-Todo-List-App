@@ -1,4 +1,5 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { initDB } from "@/lib/db";
 import { useUIStore } from "@/stores/useUIStore";
 import {
   DarkTheme,
@@ -19,6 +20,7 @@ export default function RootLayout() {
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
+    initDB();
     loadTheme();
     loadLanguage();
   }, []);
@@ -46,6 +48,14 @@ export default function RootLayout() {
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="task/new"
+          options={{ presentation: "transparentModal", headerShown: false, animation: "none" }}
+        />
+        <Stack.Screen
+          name="habit/new"
+          options={{ presentation: "transparentModal", headerShown: false, animation: "none" }}
+        />
       </Stack>
     </ThemeProvider>
   );
