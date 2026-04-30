@@ -59,7 +59,10 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
   async createHabit(data) {
     try {
       const habit = await habitRepository.create(data)
-      set(state => ({ habits: [...state.habits, habit] }))
+      set(state => ({
+        habits: [...state.habits, habit],
+        todayHabits: [...state.todayHabits, habit],
+      }))
     } catch (e) {
       set({ error: (e as Error).message })
     }

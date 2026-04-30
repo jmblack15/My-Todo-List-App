@@ -20,7 +20,7 @@ export type Habit = {
   title: string
   icon: string
   color: string
-  frequency: 'daily' | 'weekly'
+  frequency: string
   target_days: number
   area?: string
   active: boolean
