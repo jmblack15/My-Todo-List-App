@@ -58,6 +58,14 @@ export default function RootLayout() {
           name="habit/new"
           options={{ presentation: "transparentModal", headerShown: false, animation: "none" }}
         />
+        <Stack.Screen
+          name="task/[id]"
+          options={{ presentation: "transparentModal", headerShown: false, animation: "none" }}
+        />
+        <Stack.Screen
+          name="habit/[id]"
+          options={{ presentation: "transparentModal", headerShown: false, animation: "none" }}
+        />
       </Stack>
     </ThemeProvider>
   );

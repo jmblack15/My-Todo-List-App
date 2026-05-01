@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { format } from 'date-fns'
 import { taskRepository } from '@/repositories/taskRepository'
 import { cancelTaskNotification, scheduleTaskNotification } from '@/services/notificationService'
 import type { Task } from '@/types'
@@ -65,8 +66,9 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     try {
       const task = await taskRepository.create(data)
       scheduleTaskNotification(task)
+      const today = format(new Date(), 'yyyy-MM-dd')
       set(state => {
-        const belongsToToday = !task.due_date || task.due_date === state.todayDate
+        const belongsToToday = !task.due_date || task.due_date === today
         return {
           tasks: [task, ...state.tasks],
           todayTasks: belongsToToday ? [task, ...state.todayTasks] : state.todayTasks,

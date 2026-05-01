@@ -9,10 +9,12 @@ export function TaskCard({
   tasks,
   onToggle,
   onDelete,
+  onEdit,
 }: {
   tasks: Task[];
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
 }) {
   const { colors } = useAppTheme();
   return (
@@ -29,6 +31,7 @@ export function TaskCard({
           isLast={i === tasks.length - 1}
           onToggle={() => onToggle(task.id)}
           onDelete={() => onDelete(task.id)}
+          onEdit={() => onEdit(task.id)}
         />
       ))}
     </View>

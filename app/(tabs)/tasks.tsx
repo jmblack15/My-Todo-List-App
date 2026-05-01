@@ -54,6 +54,10 @@ export default function TasksScreen() {
     deleteTask(id);
   };
 
+  const handleEdit = (id: string) => {
+    router.push(`/task/${id}` as never);
+  };
+
   const today = format(new Date(), "yyyy-MM-dd");
 
   const pending = tasks.filter((t) => !t.done && !t.skipped);
@@ -135,6 +139,7 @@ export default function TasksScreen() {
                   tasks={filtered}
                   onToggle={toggleDone}
                   onDelete={handleDelete}
+                  onEdit={handleEdit}
                 />
               </>
             )}
@@ -148,6 +153,7 @@ export default function TasksScreen() {
                   tasks={todayGroup}
                   onToggle={toggleDone}
                   onDelete={handleDelete}
+                  onEdit={handleEdit}
                 />
               </View>
             )}
@@ -159,6 +165,7 @@ export default function TasksScreen() {
                   tasks={upcomingGroup}
                   onToggle={toggleDone}
                   onDelete={handleDelete}
+                  onEdit={handleEdit}
                 />
               </View>
             )}
@@ -170,6 +177,7 @@ export default function TasksScreen() {
                   tasks={undatedGroup}
                   onToggle={toggleDone}
                   onDelete={handleDelete}
+                  onEdit={handleEdit}
                 />
               </View>
             )}
@@ -185,6 +193,7 @@ export default function TasksScreen() {
             tasks={completed}
             onToggle={toggleDone}
             onDelete={handleDelete}
+            onEdit={handleEdit}
           />
         )}
       </ScrollView>

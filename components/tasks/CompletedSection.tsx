@@ -17,10 +17,12 @@ export function CompletedSection({
   tasks,
   onToggle,
   onDelete,
+  onEdit,
 }: {
   tasks: Task[];
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
 }) {
   const { colors } = useAppTheme();
   const [expanded, setExpanded] = useState(false);
@@ -59,7 +61,7 @@ export function CompletedSection({
       </Pressable>
 
       {expanded && (
-        <TaskCard tasks={tasks} onToggle={onToggle} onDelete={onDelete} />
+        <TaskCard tasks={tasks} onToggle={onToggle} onDelete={onDelete} onEdit={onEdit} />
       )}
     </View>
   );

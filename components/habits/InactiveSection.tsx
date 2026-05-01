@@ -16,9 +16,11 @@ import { HabitCard } from "./HabitCard";
 export function InactiveSection({
   habits,
   onDelete,
+  onEdit,
 }: {
   habits: Habit[];
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
 }) {
   const { colors } = useAppTheme();
   const [expanded, setExpanded] = useState(false);
@@ -57,7 +59,7 @@ export function InactiveSection({
       </Pressable>
 
       {expanded && (
-        <HabitCard habits={habits} showToggle={false} onDelete={onDelete} />
+        <HabitCard habits={habits} showToggle={false} onDelete={onDelete} onEdit={onEdit} />
       )}
     </View>
   );

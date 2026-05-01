@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -10,10 +10,12 @@ import type { Task } from "@/types";
 function TaskItem({
   task,
   onToggle,
+  onDelete,
   isLast,
 }: {
   task: Task;
   onToggle: () => void;
+  onDelete: () => void;
   isLast: boolean;
 }) {
   const { colors } = useAppTheme();
@@ -24,8 +26,12 @@ function TaskItem({
   };
 
   const handleLongPress = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.push(`/task/${task.id}` as never);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(task.title, undefined, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Editar", onPress: () => router.push(`/task/${task.id}` as never) },
+      { text: "Eliminar", style: "destructive", onPress: onDelete },
+    ]);
   };
 
   const priorityColor =
@@ -115,10 +121,12 @@ export function TasksSection({
   tasks,
   doneTasks,
   onToggle,
+  onDelete,
 }: {
   tasks: Task[];
   doneTasks: number;
   onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const { colors } = useAppTheme();
 
@@ -143,6 +151,7 @@ export function TasksSection({
               task={task}
               isLast={i === tasks.length - 1}
               onToggle={() => onToggle(task.id)}
+              onDelete={() => onDelete(task.id)}
             />
           ))}
         </View>

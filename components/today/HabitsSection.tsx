@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -17,10 +17,12 @@ import type { Habit } from "@/types";
 function HabitItem({
   habit,
   onToggle,
+  onDelete,
   isLast,
 }: {
   habit: Habit;
   onToggle: () => void;
+  onDelete: () => void;
   isLast: boolean;
 }) {
   const { colors } = useAppTheme();
@@ -39,9 +41,19 @@ function HabitItem({
     onToggle();
   };
 
+  const handleLongPress = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(habit.title, undefined, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Editar", onPress: () => router.push(`/habit/${habit.id}` as never) },
+      { text: "Eliminar", style: "destructive", onPress: onDelete },
+    ]);
+  };
+
   return (
     <Pressable
       onPress={handlePress}
+      onLongPress={handleLongPress}
       style={[
         styles.listItem,
         !isLast && {
@@ -121,12 +133,14 @@ export function HabitsSection({
   habitProgress,
   today,
   onToggle,
+  onDelete,
 }: {
   habits: Habit[];
   completedHabits: number;
   habitProgress: number;
   today: string;
   onToggle: (id: string, date: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const { colors } = useAppTheme();
 
@@ -171,6 +185,7 @@ export function HabitsSection({
               habit={habit}
               isLast={i === habits.length - 1}
               onToggle={() => onToggle(habit.id, today)}
+              onDelete={() => onDelete(habit.id)}
             />
           ))}
         </View>
