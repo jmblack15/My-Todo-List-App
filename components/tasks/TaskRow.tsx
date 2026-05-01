@@ -22,11 +22,13 @@ export function TaskRow({
   task,
   onToggle,
   onDelete,
+  onEdit,
   isLast,
 }: {
   task: Task;
   onToggle: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   isLast: boolean;
 }) {
   const { colors } = useAppTheme();
@@ -40,6 +42,7 @@ export function TaskRow({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(task.title, undefined, [
       { text: "Cancelar", style: "cancel" },
+      { text: "Editar", onPress: onEdit },
       { text: "Eliminar", style: "destructive", onPress: onDelete },
     ]);
   };

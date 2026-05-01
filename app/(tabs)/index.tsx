@@ -24,8 +24,8 @@ export default function HomeScreen() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
 
-  const { todayTasks, loadTodayTasks, toggleDone } = useTaskStore();
-  const { todayHabits, loadTodayHabits, toggleToday } = useHabitStore();
+  const { todayTasks, loadTodayTasks, toggleDone, deleteTask } = useTaskStore();
+  const { todayHabits, loadTodayHabits, toggleToday, deleteHabit } = useHabitStore();
   const { todayBlocks, loadTodayBlocks } = useScheduleStore();
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -104,11 +104,13 @@ export default function HomeScreen() {
               habitProgress={habitProgress}
               today={today}
               onToggle={toggleToday}
+              onDelete={deleteHabit}
             />
             <TasksSection
               tasks={sortedTasks}
               doneTasks={doneTasks}
               onToggle={toggleDone}
+              onDelete={deleteTask}
             />
           </>
         )}

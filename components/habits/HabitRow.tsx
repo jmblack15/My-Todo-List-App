@@ -16,12 +16,14 @@ export function HabitRow({
   habit,
   onToggle,
   onDelete,
+  onEdit,
   isLast,
   showToggle,
 }: {
   habit: Habit;
   onToggle?: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   isLast: boolean;
   showToggle: boolean;
 }) {
@@ -46,6 +48,7 @@ export function HabitRow({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(habit.title, undefined, [
       { text: "Cancelar", style: "cancel" },
+      { text: "Editar", onPress: onEdit },
       { text: "Eliminar", style: "destructive", onPress: onDelete },
     ]);
   };

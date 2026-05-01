@@ -10,11 +10,13 @@ export function HabitCard({
   showToggle,
   onToggle,
   onDelete,
+  onEdit,
 }: {
   habits: Habit[];
   showToggle: boolean;
   onToggle?: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
 }) {
   const { colors } = useAppTheme();
   return (
@@ -32,6 +34,7 @@ export function HabitCard({
           showToggle={showToggle}
           onToggle={onToggle ? () => onToggle(habit.id) : undefined}
           onDelete={() => onDelete(habit.id)}
+          onEdit={() => onEdit(habit.id)}
         />
       ))}
     </View>

@@ -58,6 +58,10 @@ export default function HabitsScreen() {
     deleteHabit(id);
   };
 
+  const handleEdit = (id: string) => {
+    router.push(`/habit/${id}` as never);
+  };
+
   const activeToday = todayHabits.filter((h) => h.active);
   const inactive = habits.filter((h) => !h.active);
 
@@ -121,13 +125,14 @@ export default function HabitsScreen() {
                 showToggle
                 onToggle={(id) => toggleToday(id, today)}
                 onDelete={handleDelete}
+                onEdit={handleEdit}
               />
             </View>
           ))
         )}
 
         {inactive.length > 0 && (
-          <InactiveSection habits={inactive} onDelete={handleDelete} />
+          <InactiveSection habits={inactive} onDelete={handleDelete} onEdit={handleEdit} />
         )}
       </ScrollView>
     </View>
