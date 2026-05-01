@@ -24,6 +24,7 @@ export type Habit = {
   target_days: number
   area?: string
   active: boolean
+  reminder_time?: string
   created_at: string
   streak: number
   completed_today: boolean

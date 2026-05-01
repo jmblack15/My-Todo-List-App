@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { habitRepository } from '@/repositories/habitRepository'
+import { cancelHabitNotifications, scheduleHabitNotifications } from '@/services/notificationService'
 import type { Habit } from '@/types'
 
 type HabitStore = {
@@ -59,6 +60,7 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
   async createHabit(data) {
     try {
       const habit = await habitRepository.create(data)
+      scheduleHabitNotifications(habit)
       set(state => ({
         habits: [...state.habits, habit],
         todayHabits: [...state.todayHabits, habit],
@@ -82,6 +84,7 @@ export const useHabitStore = create<HabitStore>()((set, get) => ({
   async deleteHabit(id: string) {
     try {
       await habitRepository.delete(id)
+      cancelHabitNotifications(id)
       set(state => ({
         habits: state.habits.filter(h => h.id !== id),
         todayHabits: state.todayHabits.filter(h => h.id !== id),

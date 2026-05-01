@@ -6,6 +6,13 @@ export async function initDB(): Promise<void> {
   // WAL must be set outside any transaction
   await db.execAsync('PRAGMA journal_mode = WAL;')
 
+  // Add reminder_time column to existing habits tables (no-op if already present)
+  try {
+    await db.execAsync('ALTER TABLE habits ADD COLUMN reminder_time TEXT')
+  } catch {
+    // column already exists
+  }
+
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS tasks (
       id          TEXT    PRIMARY KEY,

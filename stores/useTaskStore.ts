@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { taskRepository } from '@/repositories/taskRepository'
+import { cancelTaskNotification, scheduleTaskNotification } from '@/services/notificationService'
 import type { Task } from '@/types'
 
 type TaskStore = {
@@ -50,6 +51,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     const newDone = !task.done
     try {
       await taskRepository.toggleDone(id, newDone)
+      if (newDone) cancelTaskNotification(id)
       const now = new Date().toISOString()
       const patch: Partial<Task> = { done: newDone, done_at: newDone ? now : undefined }
       const apply = (list: Task[]) => list.map(t => (t.id === id ? { ...t, ...patch } : t))
@@ -62,6 +64,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
   async createTask(data) {
     try {
       const task = await taskRepository.create(data)
+      scheduleTaskNotification(task)
       set(state => {
         const belongsToToday = !task.due_date || task.due_date === state.todayDate
         return {
@@ -87,6 +90,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
   async deleteTask(id: string) {
     try {
       await taskRepository.delete(id)
+      cancelTaskNotification(id)
       set(state => ({
         tasks: state.tasks.filter(t => t.id !== id),
         todayTasks: state.todayTasks.filter(t => t.id !== id),

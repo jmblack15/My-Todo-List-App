@@ -1,3 +1,6 @@
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -6,6 +9,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -42,6 +46,16 @@ export default function NewTaskScreen() {
   const [priority, setPriority] = useState<Priority>("medium");
   const [saving, setSaving] = useState(false);
 
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState<Date | null>(null);
+
+  // iOS: show pickers inside a modal
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  // Android: show picker inline (it opens a native dialog)
+  const [showAndroidDate, setShowAndroidDate] = useState(false);
+  const [showAndroidTime, setShowAndroidTime] = useState(false);
+
   const translateY = useSharedValue(600);
 
   useEffect(() => {
@@ -57,8 +71,36 @@ export default function NewTaskScreen() {
     setTimeout(() => router.back(), 230);
   };
 
-  const today = new Date();
-  const dateLabel = `Hoy · ${format(today, "d MMM", { locale: es })}`;
+  const isToday =
+    format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+  const dateLabel = isToday
+    ? `Hoy · ${format(selectedDate, "d MMM", { locale: es })}`
+    : format(selectedDate, "d MMM yyyy", { locale: es });
+  const timeLabel = selectedTime
+    ? format(selectedTime, "HH:mm")
+    : "—";
+
+  const onPressDate = () => {
+    Haptics.selectionAsync();
+    if (Platform.OS === "ios") setShowDateModal(true);
+    else setShowAndroidDate(true);
+  };
+
+  const onPressTime = () => {
+    Haptics.selectionAsync();
+    if (Platform.OS === "ios") setShowTimeModal(true);
+    else setShowAndroidTime(true);
+  };
+
+  const onAndroidDateChange = (e: DateTimePickerEvent, date?: Date) => {
+    setShowAndroidDate(false);
+    if (e.type === "set" && date) setSelectedDate(date);
+  };
+
+  const onAndroidTimeChange = (e: DateTimePickerEvent, date?: Date) => {
+    setShowAndroidTime(false);
+    if (e.type === "set" && date) setSelectedTime(date);
+  };
 
   const handleCreate = async () => {
     if (!title.trim() || saving) return;
@@ -67,8 +109,8 @@ export default function NewTaskScreen() {
     await createTask({
       title: title.trim(),
       notes: notes.trim() || undefined,
-      due_date: format(today, "yyyy-MM-dd"),
-      due_time: undefined,
+      due_date: format(selectedDate, "yyyy-MM-dd"),
+      due_time: selectedTime ? format(selectedTime, "HH:mm") : undefined,
       priority,
       done: false,
       skipped: false,
@@ -150,15 +192,32 @@ export default function NewTaskScreen() {
 
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-            <FieldRow icon="calendar-outline" label="Fecha" colors={colors} last={false}>
+            <FieldRow
+              icon="calendar-outline"
+              label="Fecha"
+              colors={colors}
+              last={false}
+              onPress={onPressDate}
+            >
               <Text style={[styles.fieldValue, { color: colors.text }]}>
                 {dateLabel}
               </Text>
             </FieldRow>
 
-            <FieldRow icon="time-outline" label="Hora" colors={colors} last={false}>
-              <Text style={[styles.fieldValue, { color: colors.textTertiary }]}>
-                —
+            <FieldRow
+              icon="time-outline"
+              label="Hora"
+              colors={colors}
+              last={false}
+              onPress={onPressTime}
+            >
+              <Text
+                style={[
+                  styles.fieldValue,
+                  { color: selectedTime ? colors.text : colors.textTertiary },
+                ]}
+              >
+                {timeLabel}
               </Text>
             </FieldRow>
 
@@ -230,6 +289,97 @@ export default function NewTaskScreen() {
           </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
+
+      {/* Android pickers (render when active — they open as native dialogs) */}
+      {showAndroidDate && (
+        <DateTimePicker
+          mode="date"
+          value={selectedDate}
+          onChange={onAndroidDateChange}
+        />
+      )}
+      {showAndroidTime && (
+        <DateTimePicker
+          mode="time"
+          value={selectedTime ?? new Date()}
+          onChange={onAndroidTimeChange}
+          is24Hour
+        />
+      )}
+
+      {/* iOS date modal */}
+      <Modal
+        visible={showDateModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDateModal(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowDateModal(false)}
+        />
+        <View style={[styles.pickerModal, { backgroundColor: colors.card }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+            <Pressable onPress={() => setShowDateModal(false)} hitSlop={8}>
+              <Text style={[styles.pickerAction, { color: colors.textSecondary }]}>
+                Cancelar
+              </Text>
+            </Pressable>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Fecha</Text>
+            <Pressable onPress={() => setShowDateModal(false)} hitSlop={8}>
+              <Text style={[styles.pickerAction, { color: colors.primary, fontWeight: "600" }]}>
+                Listo
+              </Text>
+            </Pressable>
+          </View>
+          <DateTimePicker
+            mode="date"
+            value={selectedDate}
+            display="spinner"
+            locale="es"
+            onChange={(_e, date) => { if (date) setSelectedDate(date); }}
+            style={styles.iosPicker}
+            textColor={colors.text}
+          />
+        </View>
+      </Modal>
+
+      {/* iOS time modal */}
+      <Modal
+        visible={showTimeModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTimeModal(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowTimeModal(false)}
+        />
+        <View style={[styles.pickerModal, { backgroundColor: colors.card }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+            <Pressable onPress={() => setShowTimeModal(false)} hitSlop={8}>
+              <Text style={[styles.pickerAction, { color: colors.textSecondary }]}>
+                Cancelar
+              </Text>
+            </Pressable>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Hora</Text>
+            <Pressable onPress={() => setShowTimeModal(false)} hitSlop={8}>
+              <Text style={[styles.pickerAction, { color: colors.primary, fontWeight: "600" }]}>
+                Listo
+              </Text>
+            </Pressable>
+          </View>
+          <DateTimePicker
+            mode="time"
+            value={selectedTime ?? new Date()}
+            display="spinner"
+            is24Hour
+            onChange={(_e, date) => { if (date) setSelectedTime(date); }}
+            style={styles.iosPicker}
+            textColor={colors.text}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -240,21 +390,25 @@ function FieldRow({
   children,
   colors,
   last,
+  onPress,
 }: {
   icon: string;
   label: string;
   children: React.ReactNode;
   colors: any;
   last: boolean;
+  onPress?: () => void;
 }) {
   return (
-    <View
-      style={[
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
         styles.fieldRow,
         !last && {
           borderBottomWidth: StyleSheet.hairlineWidth,
           borderBottomColor: colors.border,
         },
+        onPress && pressed && { opacity: 0.6 },
       ]}
     >
       <View style={styles.fieldLeft}>
@@ -269,7 +423,7 @@ function FieldRow({
         </Text>
       </View>
       {children}
-    </View>
+    </Pressable>
   );
 }
 
@@ -351,4 +505,25 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   chipText: { fontSize: 13 },
+  // picker modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  pickerModal: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 32,
+  },
+  pickerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  pickerTitle: { fontSize: 16, fontWeight: "600" },
+  pickerAction: { fontSize: 16 },
+  iosPicker: { height: 216 },
 });
