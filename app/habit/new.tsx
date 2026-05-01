@@ -1,9 +1,13 @@
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -23,10 +27,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useHabitStore } from "@/stores/useHabitStore";
-
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
-const ITEM_H = 44;
 
 const ICONS = ["🔥", "📚", "🏃", "💧", "🎯", "🏋️", "🧘", "✍️", "🍎", "💊"];
 
@@ -53,6 +53,12 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
+function buildReminderDate(hour: number, minute: number) {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}
+
 export default function NewHabitScreen() {
   const { colors } = useAppTheme();
   const { bottom } = useSafeAreaInsets();
@@ -62,9 +68,9 @@ export default function NewHabitScreen() {
   const [icon, setIcon] = useState(ICONS[0]);
   const [color, setColor] = useState(COLORS[2]);
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [reminderHour, setReminderHour] = useState(18);
-  const [reminderMinute, setReminderMinute] = useState(0);
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [reminderTime, setReminderTime] = useState(buildReminderDate(18, 0));
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [showAndroidTime, setShowAndroidTime] = useState(false);
   const [hasGoal, setHasGoal] = useState(true);
   const [targetDays, setTargetDays] = useState("21");
   const [saving, setSaving] = useState(false);
@@ -98,7 +104,18 @@ export default function NewHabitScreen() {
           .sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b))
           .join(",");
 
-  const reminderLabel = `Cada día a las ${pad(reminderHour)}:${pad(reminderMinute)}`;
+  const reminderLabel = `Cada día a las ${pad(reminderTime.getHours())}:${pad(reminderTime.getMinutes())}`;
+
+  const onPressReminder = () => {
+    Haptics.selectionAsync();
+    if (Platform.OS === "ios") setShowTimeModal(true);
+    else setShowAndroidTime(true);
+  };
+
+  const onAndroidTimeChange = (e: DateTimePickerEvent, date?: Date) => {
+    setShowAndroidTime(false);
+    if (e.type === "set" && date) setReminderTime(date);
+  };
 
   const handleCreate = async () => {
     if (!title.trim() || saving) return;
@@ -112,6 +129,7 @@ export default function NewHabitScreen() {
       frequency: frequencyString,
       target_days: hasGoal && !isNaN(days) && days > 0 ? days : 0,
       active: true,
+      reminder_time: `${pad(reminderTime.getHours())}:${pad(reminderTime.getMinutes())}`,
     });
     dismiss();
   };
@@ -292,13 +310,14 @@ export default function NewHabitScreen() {
 
             {/* Reminder */}
             <Pressable
-              onPress={() => setShowTimePicker((v) => !v)}
-              style={[
+              onPress={onPressReminder}
+              style={({ pressed }) => [
                 styles.fieldRow,
                 {
                   borderBottomWidth: StyleSheet.hairlineWidth,
                   borderBottomColor: colors.border,
                 },
+                pressed && { opacity: 0.6 },
               ]}
             >
               <View style={styles.fieldLeft}>
@@ -317,40 +336,13 @@ export default function NewHabitScreen() {
                   {reminderLabel}
                 </Text>
                 <Ionicons
-                  name={showTimePicker ? "chevron-up" : "chevron-down"}
+                  name="chevron-forward"
                   size={14}
                   color={colors.textTertiary}
                   style={{ marginLeft: 4 }}
                 />
               </View>
             </Pressable>
-
-            {showTimePicker && (
-              <View
-                style={[
-                  styles.timePicker,
-                  {
-                    backgroundColor: colors.bgSubtle,
-                    borderBottomWidth: StyleSheet.hairlineWidth,
-                    borderBottomColor: colors.border,
-                  },
-                ]}
-              >
-                <TimeColumn
-                  items={HOURS}
-                  selected={reminderHour}
-                  onChange={setReminderHour}
-                  colors={colors}
-                />
-                <Text style={[styles.timeColon, { color: colors.text }]}>:</Text>
-                <TimeColumn
-                  items={MINUTES}
-                  selected={reminderMinute}
-                  onChange={setReminderMinute}
-                  colors={colors}
-                />
-              </View>
-            )}
 
             {/* Goal toggle */}
             <View
@@ -382,12 +374,7 @@ export default function NewHabitScreen() {
             </View>
 
             {hasGoal && (
-              <View
-                style={[
-                  styles.fieldRow,
-                  { paddingLeft: 40 },
-                ]}
-              >
+              <View style={[styles.fieldRow, { paddingLeft: 40 }]}>
                 <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
                   Completar durante
                 </Text>
@@ -411,90 +398,55 @@ export default function NewHabitScreen() {
           </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
-    </View>
-  );
-}
 
-function TimeColumn({
-  items,
-  selected,
-  onChange,
-  colors,
-}: {
-  items: number[];
-  selected: number;
-  onChange: (v: number) => void;
-  colors: any;
-}) {
-  const ref = useRef<ScrollView>(null);
+      {/* Android time picker (opens native dialog) */}
+      {showAndroidTime && (
+        <DateTimePicker
+          mode="time"
+          value={reminderTime}
+          onChange={onAndroidTimeChange}
+          is24Hour
+        />
+      )}
 
-  const scrollTo = (idx: number) => {
-    ref.current?.scrollTo({ y: idx * ITEM_H, animated: true });
-  };
-
-  useEffect(() => {
-    const idx = items.indexOf(selected);
-    if (idx >= 0) setTimeout(() => scrollTo(idx), 80);
-  }, []);
-
-  const increase = () => {
-    const idx = (items.indexOf(selected) + 1) % items.length;
-    scrollTo(idx);
-    onChange(items[idx]);
-  };
-
-  const decrease = () => {
-    const idx = (items.indexOf(selected) - 1 + items.length) % items.length;
-    scrollTo(idx);
-    onChange(items[idx]);
-  };
-
-  return (
-    <View style={styles.timeColumn}>
-      <Pressable onPress={decrease} hitSlop={8} style={styles.timeArrow}>
-        <Ionicons name="chevron-up" size={18} color={colors.textSecondary} />
-      </Pressable>
-      <ScrollView
-        ref={ref}
-        style={styles.timeScroll}
-        showsVerticalScrollIndicator={false}
-        snapToInterval={ITEM_H}
-        decelerationRate="fast"
-        nestedScrollEnabled
-        onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_H);
-          const clamped = Math.min(Math.max(idx, 0), items.length - 1);
-          onChange(items[clamped]);
-        }}
-        contentContainerStyle={{ paddingVertical: ITEM_H }}
+      {/* iOS time modal */}
+      <Modal
+        visible={showTimeModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTimeModal(false)}
       >
-        {items.map((item) => (
-          <Pressable
-            key={item}
-            onPress={() => {
-              const idx = items.indexOf(item);
-              scrollTo(idx);
-              onChange(item);
-            }}
-            style={styles.timeItem}
-          >
-            <Text
-              style={[
-                styles.timeValue,
-                {
-                  color: item === selected ? colors.text : colors.textQuaternary,
-                  fontWeight: item === selected ? "400" : "300",
-                },
-              ]}
-            >
-              {pad(item)}
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowTimeModal(false)}
+        />
+        <View style={[styles.pickerModal, { backgroundColor: colors.card }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+            <Pressable onPress={() => setShowTimeModal(false)} hitSlop={8}>
+              <Text style={[styles.pickerAction, { color: colors.textSecondary }]}>
+                Cancelar
+              </Text>
+            </Pressable>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>
+              Hora del recordatorio
             </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-      <Pressable onPress={increase} hitSlop={8} style={styles.timeArrow}>
-        <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
-      </Pressable>
+            <Pressable onPress={() => setShowTimeModal(false)} hitSlop={8}>
+              <Text style={[styles.pickerAction, { color: colors.primary, fontWeight: "600" }]}>
+                Listo
+              </Text>
+            </Pressable>
+          </View>
+          <DateTimePicker
+            mode="time"
+            value={reminderTime}
+            display="spinner"
+            is24Hour
+            onChange={(_e, date) => { if (date) setReminderTime(date); }}
+            style={styles.iosPicker}
+            textColor={colors.text}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -598,19 +550,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dayLabel: { fontSize: 11, fontWeight: "600" },
-  timePicker: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    gap: 8,
-  },
-  timeColumn: { alignItems: "center", gap: 4 },
-  timeArrow: { padding: 4 },
-  timeScroll: { height: ITEM_H * 3, width: 64 },
-  timeItem: { height: ITEM_H, alignItems: "center", justifyContent: "center" },
-  timeValue: { fontSize: 32, fontWeight: "300", minWidth: 56, textAlign: "center" },
-  timeColon: { fontSize: 32, fontWeight: "300", marginBottom: 8 },
   goalRow: { flexDirection: "row", alignItems: "center" },
   goalInput: {
     fontSize: 15,
@@ -621,4 +560,25 @@ const styles = StyleSheet.create({
     minWidth: 44,
     textAlign: "center",
   },
+  // picker modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  pickerModal: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 32,
+  },
+  pickerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  pickerTitle: { fontSize: 16, fontWeight: "600" },
+  pickerAction: { fontSize: 16 },
+  iosPicker: { height: 216 },
 });

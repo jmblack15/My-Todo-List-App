@@ -12,6 +12,7 @@ type RawHabit = {
   target_days: number
   area: string | null
   active: number
+  reminder_time: string | null
   created_at: string
 }
 
@@ -27,6 +28,7 @@ function mapHabit(row: RawHabit, streak: number, completed_today: boolean): Habi
     target_days: row.target_days,
     area: row.area ?? undefined,
     active: row.active === 1,
+    reminder_time: row.reminder_time ?? undefined,
     created_at: row.created_at,
     streak,
     completed_today,
@@ -106,8 +108,8 @@ export const habitRepository = {
       const id = Crypto.randomUUID()
       const now = new Date().toISOString()
       await db.runAsync(
-        `INSERT INTO habits (id, title, icon, color, frequency, target_days, area, active, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO habits (id, title, icon, color, frequency, target_days, area, active, reminder_time, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           data.title,
@@ -117,6 +119,7 @@ export const habitRepository = {
           data.target_days,
           data.area ?? null,
           data.active ? 1 : 0,
+          data.reminder_time ?? null,
           now,
         ]
       )
@@ -142,7 +145,8 @@ export const habitRepository = {
       if (data.frequency !== undefined)   { fields.push('frequency = ?');   values.push(data.frequency) }
       if (data.target_days !== undefined) { fields.push('target_days = ?'); values.push(data.target_days) }
       if (data.area !== undefined)        { fields.push('area = ?');        values.push(data.area ?? null) }
-      if (data.active !== undefined)      { fields.push('active = ?');      values.push(data.active ? 1 : 0) }
+      if (data.active !== undefined)        { fields.push('active = ?');        values.push(data.active ? 1 : 0) }
+      if (data.reminder_time !== undefined) { fields.push('reminder_time = ?'); values.push(data.reminder_time ?? null) }
 
       if (fields.length === 0) return
 

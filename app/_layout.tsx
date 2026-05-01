@@ -1,5 +1,6 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { initDB } from "@/lib/db";
+import { setupNotifications } from "@/services/notificationService";
 import { useUIStore } from "@/stores/useUIStore";
 import {
   DarkTheme,
@@ -21,6 +22,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     initDB();
+    setupNotifications();
     loadTheme();
     loadLanguage();
   }, []);
